@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Descubra o Ângulo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="game-container">
+      <h1>Angle</h1>
+
+      <canvas
+        id="angleCanvas"
+        width="400"
+        height="400"
+        style="border: 1px solid #000"
+      ></canvas>
+
+      <br />
+      <!-- <label for="angleGuess">Informe o valor do ângulo:</label> -->
+      <div class="btn-container">
+        <input type="number" id="angleGuess" min="0" max="360" />
+        <button id="submitGuess">Guess!</button>
+      </div>
+
+      <br />
+      <p>Attempts: <span id="attemptsCount">0</span> / 4</p>
+
+      <table border="1">
+        <thead>
+          <tr>
+            <th>Palpite</th>
+            <th>Resultado</th>
+            <th>Dica</th>
+          </tr>
+        </thead>
+        <tbody id="resultsTableBody"></tbody>
+      </table>
+
+      <script>
+        const canvas = document.getElementById("angleCanvas");
+        const ctx = canvas.getContext("2d");
+        const angleInput = document.getElementById("angleGuess");
+        const submitButton = document.getElementById("submitGuess");
+        const attemptsDisplay = document.getElementById("attemptsCount");
+        const resultsTableBody = document.getElementById("resultsTableBody");
+
+        let correctAngle = null;
+
+        // Desenhar ângulo no Canvas
+        function drawAngle(correctAngle) {
+          const canvas = document.getElementById("angleCanvas");
+          const context = canvas.getContext("2d");
+
+          // Limpa o canvas
+          context.clearRect(0, 0, canvas.width, canvas.height);
+
+          const centerX = canvas.width / 2;
+          const centerY = canvas.height / 2;
+          const radius = 100; // Raio para o tamanho do ângulo
+
+          // Desenha a linha base
+          context.beginPath();
+          context.moveTo(centerX, centerY);
+          context.lineTo(centerX + radius, centerY); // Linha horizontal
+          context.strokeStyle = "black";
+          context.lineWidth = 2;
+          context.stroke();
+
+          // Converte o ângulo correto de graus para radianos
+          const angleInRadians = (correctAngle * Math.PI) / 180;
+
+          // Desenha a segunda linha do ângulo
+          context.beginPath();
+          context.moveTo(centerX, centerY);
+          context.lineTo(
+            centerX + radius * Math.cos(angleInRadians),
+            centerY - radius * Math.sin(angleInRadians)
+          ); // Segunda linha
+          context.strokeStyle = "red";
+          context.lineWidth = 2;
+          context.stroke();
+
+          // Opcional: Desenhar o arco representando o ângulo
+          context.beginPath();
+          context.arc(centerX, centerY, 50, 0, -angleInRadians, true); // Arco entre as linhas
+          context.strokeStyle = "blue";
+          context.lineWidth = 2;
+          context.stroke();
+        }
+        // Função para iniciar o jogo e obter o ângulo do servidor
+        async function startGame() {
+          const response = await fetch("http://localhost:8080/api/angle/start");
+          const result = await response.json();
+
+          // Atualiza a variável com o ângulo correto
+          correctAngle = result.correctAngle;
+
+          // Atualiza apenas o canvas com o novo ângulo
+          drawAngle(correctAngle);
+
+          // Atualiza outras partes da página se necessário (por exemplo, tabela de tentativas)
+          // Aqui você pode limpar ou atualizar as tentativas, resultados, etc.
+        }
+
+        startGame(); // Inicia o jogo e desenha o ângulo
+
+        // Função de envio de palpite
+        submitButton.addEventListener("click", async () => {
+          const angleGuess = parseInt(angleInput.value);
+
+          if (isNaN(angleGuess) || angleGuess < 0 || angleGuess > 360) {
+            alert("Informe um valor de ângulo entre 0 e 360.");
+            return;
+          }
+
+          // Enviar palpite ao servidor
+          const response = await fetch(
+            "http://localhost:8080/api/angle/guess",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ angleGuess }),
+            }
+          );
+
+          const result = await response.json();
+          const newRow = document.createElement("tr");
+
+          // Atualizar tentativas e resultado na tabela
+          if (result.status === "correct") {
+            newRow.innerHTML = `<td>${angleGuess}</td><td>✔</td><td>✔</td>`;
+          } else if (result.status === "incorrect") {
+            newRow.innerHTML = `<td>${angleGuess}</td><td>${result.arrow}</td><td>${result.hint}</td>`;
+          } else if (result.status === "gameOver") {
+            newRow.innerHTML = `<td>${correctAngle}</td><td>✖</td><td>✖</td>`;
+            alert(result.message);
+          }
+
+          resultsTableBody.appendChild(newRow);
+          attemptsDisplay.innerText = 4 - result.attemptsLeft;
+
+          if (result.attemptsLeft === "0") {
+            submitButton.disabled = true;
+          }
+        });
+      </script>
+    </div>
+  </body>
+</html>

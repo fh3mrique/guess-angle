@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+
+body{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: "Work Sans", sans-serif;
+    font-optical-sizing: auto;
+}
+
+h1{
+    text-align: center;
+    font-size: 4em;
+    color: orange;
+}
+.btn-container button{
+    background-color: rgb(163, 161, 161);
+    border: none;
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.btn-container input{
+    width: 70%;
+    height: 35px;
+    border-radius: 10px;
+    list-style: none;
+}
+th{
+
+
+    width: 100%;
+
+    padding: 10px;
+}
+
+td{
+    padding: 10px;
+    background-color: gray;
+}
